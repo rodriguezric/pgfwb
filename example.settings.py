@@ -1,0 +1,5 @@
+# UI Settings
+FONTSIZE = 16
+BORDER = 4
+HEIGHT = 512
+WIDTH = 512

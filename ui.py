@@ -1,6 +1,13 @@
 from settings import *
 import pygame
 
+from pgfwb.utils import (
+    quit_handler,
+    up_pressed, 
+    down_pressed,
+    return_pressed,
+)
+
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 screen_rect = screen.get_rect()
 
@@ -79,13 +86,9 @@ def window(lines, autoreturn=False):
 
     while True:
         for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
+            quit_handler(event)
 
-            if event.type != pygame.KEYDOWN:
-                continue
-
-            if event.key == pygame.K_RETURN:
+            if return_pressed(event):
                 return
 
         window.update()
@@ -102,19 +105,15 @@ def menu(options):
 
     while True:
         for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
+            quit_handler(event)
 
-            if event.type != pygame.KEYDOWN:
-                continue
-
-            if event.key == pygame.K_RETURN:
+            if return_pressed(event):
                 return menu.cursor.idx
 
-            if event.key == pygame.K_UP:
+            if up_pressed(event):
                 menu.cursor.move_up()
 
-            if event.key == pygame.K_DOWN:
+            if down_pressed(event):
                 menu.cursor.move_down()
 
         menu.update()
