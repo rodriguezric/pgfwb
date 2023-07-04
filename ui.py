@@ -13,11 +13,15 @@ screen_rect = screen.get_rect()
 
 font = pygame.font.Font('pgfwb/fonts/prstart.ttf', FONTSIZE)
 
+SCROLLING_FPS = 5
+clock = pygame.time.Clock()
+
 def render_text(text):
+    """Creates a surf for the text"""
     return font.render(text, False, 'white')
 
 def get_y_pos(idx):
-    '''Used for calculating the y position of a text line'''
+    """Used for calculating the y position of a text line"""
     return FONTSIZE + idx * FONTSIZE
 
 class TextLines:
@@ -27,7 +31,35 @@ class TextLines:
         self.surf_pos = [(render_text(text), (FONTSIZE, get_y_pos(idx)))
                             for idx, text in enumerate(lines)]
 
+class ScrollngTextLines(TextLines):
+    def __init__(self, lines):
+        super().__init__(lines)
+
+        self.surf_pos = []
+        self.lines = lines
+        self.idx = 0
+        self.row = 0
+
+    def update(self):
+        if self.row < len(self.lines):
+            self.surf_pos = [(render_text(text[:self.idx+1]), (FONTSIZE, get_y_pos(idx)))
+                                for idx, text in enumerate(self.lines[:self.row+1])]
+            self.idx += 1
+            if self.idx >= len(self.lines[self.row]):
+                self.row += 1
+
+    def fill(self):
+        self.row = len(self.lines)
+        self.surf_pos = [(render_text(text), (FONTSIZE, get_y_pos(idx)))
+                            for idx, text in enumerate(self.lines)]
+
+    @property
+    def filled(self):
+        return self.row == len(self.lines)
+
+
 class Window:
+    """A class for showing a rectangle with lines of text inside it"""
     def __init__(self, lines, width=None, height=None, size_by_lines=False, text_class=TextLines):
         self.text_lines = text_class(lines)
 
@@ -49,7 +81,16 @@ class Window:
         for surf, pos in self.text_lines.surf_pos:
             self.surf.blit(surf, pos)
 
+class ScrollingWindow(Window):
+    def __init__(self, lines):
+        super().__init__(lines, text_class=ScrollngTextLines)
+
+    def update(self):
+        super().update()
+        self.text_lines.update()
+
 class Cursor:
+    """A cursor for selecting options from a menu"""
     _surf = render_text('>')
 
     def __init__(self, window):
@@ -72,6 +113,7 @@ class Cursor:
         self.idx = min(self.max_idx, self.idx + 1)
 
 class Menu(Window):
+    """A window with a cursor"""
     def __init__(self, options):
         super().__init__(options, size_by_lines=True)
         self.rect.center = screen_rect.center
@@ -82,6 +124,12 @@ class Menu(Window):
         self.surf.blit(self.cursor.surf, self.cursor.pos)
 
 def window(lines, autoreturn=False):
+    """Function for instantiating a Window object with a game loop
+
+    The autoreturn parm is used when we want to display something
+    else while the window is visible without having to press return
+    to exit its game loop
+    """
     window = Window(lines)
 
     while True:
@@ -100,7 +148,33 @@ def window(lines, autoreturn=False):
         if autoreturn:
             return
 
+def scrolling_window(lines):
+    window = ScrollingWindow(lines)
+
+    while True:
+        for event in pygame.event.get():
+            quit_handler(event)
+
+            if return_pressed(event):
+                if window.text_lines.filled:
+                    return
+                else:
+                    window.text_lines.fill()
+
+        window.update()
+
+        screen.blit(window.surf, window.rect)
+
+        pygame.display.flip()
+
+        clock.tick(SCROLLING_FPS)
+
+
 def menu(options):
+    """Function for instantiating a Menu object with a game loop
+
+    Returns the menu's curosr's index when pressing return
+    """
     menu = Menu(options)
 
     while True:
@@ -122,7 +196,9 @@ def menu(options):
 
         pygame.display.flip()
 
-def confirm(text):
-    window([text], autoreturn=True)
+def confirm(text=None):
+    """Convenient function for displaying a window with text and a yes/no menu"""
+    if text:
+        window([text], autoreturn=True)
     return menu(['YES', 'NO']) == 0
 
