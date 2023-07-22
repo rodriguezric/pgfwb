@@ -1,12 +1,13 @@
-from settings import *
-import pygame
+from collections import deque
 
+from settings import *
+import string
+import pygame 
 from pgfwb.utils import (
     quit_handler,
-    up_pressed, 
-    down_pressed,
-    return_pressed,
+    keydown,
 )
+
 
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 screen_rect = screen.get_rect()
@@ -25,6 +26,10 @@ def get_y_pos(idx):
     return FONTSIZE + idx * FONTSIZE
 
 class TextLines:
+    """This class is for conveniently creating surfs and pos for
+       a list of strings. There max_width and length are used to
+       calculate relative window sizes.
+    """
     def __init__(self, lines):
         self.max_width = max(map(len, lines))
         self.length = len(lines)
@@ -32,6 +37,9 @@ class TextLines:
                             for idx, text in enumerate(lines)]
 
 class ScrollngTextLines(TextLines):
+    """Renders each character one at a time per line based on  
+       a clock ticking. Pressing enter will fill all the lines
+    """
     def __init__(self, lines):
         super().__init__(lines)
 
@@ -42,11 +50,16 @@ class ScrollngTextLines(TextLines):
 
     def update(self):
         if self.row < len(self.lines):
-            self.surf_pos = [(render_text(text[:self.idx+1]), (FONTSIZE, get_y_pos(idx)))
-                                for idx, text in enumerate(self.lines[:self.row+1])]
+            self.surf_pos = [(render_text(text), (FONTSIZE, get_y_pos(idx)))
+                                for idx, text in enumerate(self.lines[:self.row])]
+
+            self.surf_pos.append((render_text(self.lines[self.row][:self.idx+1]), 
+                                 (FONTSIZE, get_y_pos(self.row))))
+
             self.idx += 1
             if self.idx >= len(self.lines[self.row]):
                 self.row += 1
+                self.idx = 0
 
     def fill(self):
         self.row = len(self.lines)
@@ -88,6 +101,27 @@ class ScrollingWindow(Window):
     def update(self):
         super().update()
         self.text_lines.update()
+
+class LogWindow(Window):
+    """A window for appending messages to the top"""
+    def __init__(self, lines=None, maxlen=9, *args, **kwargs):
+        if lines is None:
+            lines = ['']
+
+        super().__init__(lines, *args, **kwargs)
+        self.deque = deque(lines, maxlen=maxlen)
+
+    def add(self, text):
+        self.deque.appendleft(text)
+        self.text_lines = TextLines(list(self.deque))
+
+    def add_bottom(self, text):
+        self.deque.append(text)
+        self.text_lines = TextLines(list(self.deque))
+
+    def clear(self):
+        self.deque = deque([''])
+        self.text_lines = TextLines(list(self.deque))
 
 class Cursor:
     """A cursor for selecting options from a menu"""
@@ -135,8 +169,9 @@ def window(lines, autoreturn=False):
     while True:
         for event in pygame.event.get():
             quit_handler(event)
+            pressed = keydown(event)
 
-            if return_pressed(event):
+            if pressed(pygame.K_RETURN):
                 return
 
         window.update()
@@ -148,14 +183,18 @@ def window(lines, autoreturn=False):
         if autoreturn:
             return
 
-def scrolling_window(lines):
+def scrolling_window(lines, autoreturn=False):
+    """Note autoreturn in this function returns when the 
+       text lines for the window are filled.
+    """
     window = ScrollingWindow(lines)
 
     while True:
         for event in pygame.event.get():
             quit_handler(event)
+            pressed = keydown(event)
 
-            if return_pressed(event):
+            if pressed(pygame.K_RETURN):
                 if window.text_lines.filled:
                     return
                 else:
@@ -168,7 +207,9 @@ def scrolling_window(lines):
         pygame.display.flip()
 
         clock.tick(SCROLLING_FPS)
-
+        
+        if autoreturn and window.text_lines.filled:
+            return
 
 def menu(options):
     """Function for instantiating a Menu object with a game loop
@@ -180,14 +221,15 @@ def menu(options):
     while True:
         for event in pygame.event.get():
             quit_handler(event)
+            pressed = keydown(event)
 
-            if return_pressed(event):
+            if pressed(pygame.K_RETURN):
                 return menu.cursor.idx
 
-            if up_pressed(event):
+            if pressed(pygame.K_UP):
                 menu.cursor.move_up()
 
-            if down_pressed(event):
+            if pressed(pygame.K_DOWN):
                 menu.cursor.move_down()
 
         menu.update()
@@ -202,3 +244,44 @@ def confirm(text=None):
         window([text], autoreturn=True)
     return menu(['YES', 'NO']) == 0
 
+def prompt():
+    width = FONTSIZE * 2 + 10 * FONTSIZE
+    height = FONTSIZE * 3
+    window = Window([''], width=width, height=height)
+    window.rect.center = screen_rect.center
+    input_text = []
+    ordmap = list(map(ord, string.ascii_lowercase))
+    surf = None
+
+    while True:
+        for event in pygame.event.get():
+            quit_handler(event)
+            pressed = keydown(event)
+
+            if pressed(pygame.K_RETURN):
+                screen.fill('black')
+                return ''.join(input_text)
+
+            if pressed(pygame.K_BACKSPACE):
+                if input_text:
+                    input_text.pop()
+
+                window.text_lines = TextLines([''.join(input_text)])
+
+            if event.type != pygame.KEYDOWN:
+                continue
+
+            if event.key in ordmap:
+                key = chr(event.key)
+                pressed_keys = pygame.key.get_pressed()
+
+                if pressed_keys[pygame.K_LSHIFT] or pressed_keys[pygame.K_RSHIFT]:
+                    key = key.upper()
+                input_text.append(key)
+                window.text_lines = TextLines([''.join(input_text)])
+
+        window.update()
+
+        screen.blit(window.surf, window.rect)
+
+        pygame.display.flip()
