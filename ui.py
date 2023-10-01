@@ -250,7 +250,7 @@ def prompt():
     window = Window([''], width=width, height=height)
     window.rect.center = screen_rect.center
     input_text = []
-    ordmap = list(map(ord, string.ascii_lowercase))
+    ordmap = list(map(ord, string.ascii_lowercase + string.digits + '.'))
     surf = None
 
     while True:
