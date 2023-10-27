@@ -285,3 +285,10 @@ def prompt():
         screen.blit(window.surf, window.rect)
 
         pygame.display.flip()
+
+def window_prompt(textlines):
+    if type(textlines) is str:
+        textlines = [textlines]
+
+    window(textlines, autoreturn=True)
+    return prompt()
