@@ -255,7 +255,6 @@ def prompt(text=None):
     prompt_window.rect.center = screen_rect.center
     input_text = []
     ordmap = list(map(ord, string.ascii_lowercase + string.digits + '.'))
-    surf = None
 
     while True:
         for event in pygame.event.get():
