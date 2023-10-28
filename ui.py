@@ -242,13 +242,17 @@ def confirm(text=None):
     """Convenient function for displaying a window with text and a yes/no menu"""
     if text:
         window([text], autoreturn=True)
+
     return menu(['YES', 'NO']) == 0
 
-def prompt():
+def prompt(text=None):
+    if text:
+        window([text], autoreturn=True)
+
     width = FONTSIZE * 2 + 10 * FONTSIZE
     height = FONTSIZE * 3
-    window = Window([''], width=width, height=height)
-    window.rect.center = screen_rect.center
+    prompt_window = Window([''], width=width, height=height)
+    prompt_window.rect.center = screen_rect.center
     input_text = []
     ordmap = list(map(ord, string.ascii_lowercase + string.digits + '.'))
     surf = None
@@ -266,7 +270,7 @@ def prompt():
                 if input_text:
                     input_text.pop()
 
-                window.text_lines = TextLines([''.join(input_text)])
+                prompt_window.text_lines = TextLines([''.join(input_text)])
 
             if event.type != pygame.KEYDOWN:
                 continue
@@ -278,17 +282,10 @@ def prompt():
                 if pressed_keys[pygame.K_LSHIFT] or pressed_keys[pygame.K_RSHIFT]:
                     key = key.upper()
                 input_text.append(key)
-                window.text_lines = TextLines([''.join(input_text)])
+                prompt_window.text_lines = TextLines([''.join(input_text)])
 
-        window.update()
+        prompt_window.update()
 
-        screen.blit(window.surf, window.rect)
+        screen.blit(prompt_window.surf, prompt_window.rect)
 
         pygame.display.flip()
-
-def window_prompt(textlines):
-    if type(textlines) is str:
-        textlines = [textlines]
-
-    window(textlines, autoreturn=True)
-    return prompt()
