@@ -34,7 +34,7 @@ class TextLines:
         self.max_width = max(map(len, lines))
         self.length = len(lines)
         self.surf_pos = [(render_text(text), (FONTSIZE, get_y_pos(idx)))
-                            for idx, text in enumerate(lines)]
+                         for idx, text in enumerate(lines)]
 
 class ScrollngTextLines(TextLines):
     """Renders each character one at a time per line based on  
@@ -51,7 +51,7 @@ class ScrollngTextLines(TextLines):
     def update(self):
         if self.row < len(self.lines):
             self.surf_pos = [(render_text(text), (FONTSIZE, get_y_pos(idx)))
-                                for idx, text in enumerate(self.lines[:self.row])]
+                             for idx, text in enumerate(self.lines[:self.row])]
 
             self.surf_pos.append((render_text(self.lines[self.row][:self.idx+1]), 
                                  (FONTSIZE, get_y_pos(self.row))))
@@ -64,7 +64,7 @@ class ScrollngTextLines(TextLines):
     def fill(self):
         self.row = len(self.lines)
         self.surf_pos = [(render_text(text), (FONTSIZE, get_y_pos(idx)))
-                            for idx, text in enumerate(self.lines)]
+                         for idx, text in enumerate(self.lines)]
 
     @property
     def filled(self):
