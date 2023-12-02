@@ -25,6 +25,19 @@ def get_y_pos(idx):
     """Used for calculating the y position of a text line"""
     return FONTSIZE + idx * FONTSIZE
 
+class screen_refresh:
+    """Context manager for handling screen fill, display flip and clock tick"""
+    def __init__(self, framerate=60):
+        self.framerate = framerate
+
+    def __enter__(self):
+        screen.fill('black')
+
+    def __exit__(self, *args, **kwargs):
+        pygame.display.flip()
+        clock.tick(self.framerate)
+
+
 class TextLines:
     """This class is for conveniently creating surfs and pos for
        a list of strings. There max_width and length are used to
