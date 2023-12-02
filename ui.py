@@ -214,7 +214,7 @@ def scrolling_window(lines, autoreturn=False):
 def menu(options):
     """Function for instantiating a Menu object with a game loop
 
-    Returns the menu's curosr's index when pressing return
+    Returns the menu's cursor's index when pressing return
     """
     menu = Menu(options)
 
@@ -245,12 +245,16 @@ def confirm(text=None):
 
     return menu(['YES', 'NO']) == 0
 
-def prompt(text=None):
+def prompt(text=None, pos=None, width=None, height=None):
     if text:
         window([text], autoreturn=True)
 
-    width = FONTSIZE * 2 + 10 * FONTSIZE
-    height = FONTSIZE * 3
+    if not width:
+        width = FONTSIZE * 2 + 10 * FONTSIZE
+       
+    if not height:
+        height = FONTSIZE * 3
+
     prompt_window = Window([''], width=width, height=height)
     prompt_window.rect.center = screen_rect.center
     input_text = []
