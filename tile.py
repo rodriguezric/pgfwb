@@ -12,6 +12,9 @@ import pgfwb
 import pygame
 import settings
 import json
+import itertools
+
+adjacent_coords = itertools.product([-1, 0, 1], [-1, 0, 1])
 
 class Tile:
     """
@@ -28,8 +31,11 @@ class Tile:
     def blit_args(self):
         return (self.surf, self.rect)
 
-    def render(self, target=pgfwb.ui.display):
-        target.blit(*self.blit_args)
+    def render(self, target=pgfwb.ui.display, camera=None):
+        if camera:
+            target.blit(self.surf, camera.offset_rect(self.rect))
+        else:
+            target.blit(*self.blit_args)
 
     def recalc_rect(self):
         """
@@ -85,9 +91,9 @@ class TileMap:
         """
         return tuple(map(int, key.split(",")))
 
-    def render(self, target=pgfwb.ui.display):
+    def render(self, target=pgfwb.ui.display, camera=None):
         for tile in self.tiles.values():
-            tile.render(target)
+            tile.render(target, camera=camera)
 
     def set_tile_at_pos(self, pos, tile_partial):
         """
@@ -127,7 +133,36 @@ class TileMap:
         with open(file, 'w') as fp:
             json.dump(data, fp)
 
+class Camera:
+    def __init__(self, target, followx=True, followy=True):
+        self.target = target
+        self.followx = followx
+        self.followy = followy
+        self.pos = pygame.Vector2(
+            x=target.rect.centerx - pgfwb.ui.display.get_width() / 2,
+            y=target.rect.centery - pgfwb.ui.display.get_height() / 2
+        )
+        self.render_scroll = pygame.Vector2()
 
-        
+    def update(self):
+        if self.followx:
+            self.pos.x += (self.target.rect.centerx - pgfwb.ui.display.get_width() / 2 - self.pos.x) / 30
+
+        if self.followy:
+            self.pos.y += (self.target.rect.centery - pgfwb.ui.display.get_height() / 2 - self.pos.y) / 30
+
+        self.render_scroll.x = int(self.pos.x)
+        self.render_scroll.y = int(self.pos.y)
+
+    def offset_pos(self, pos):
+        return (pos[0] - self.render_scroll.x, pos[1] - self.render_scroll.y)
+
+    def offset_rect(self, rect):
+        rect_copy = rect.copy()
+        rect_copy.x -= self.render_scroll.x
+        rect_copy.y -= self.render_scroll.y
+
+        return rect_copy
+
 
 

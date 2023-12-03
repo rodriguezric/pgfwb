@@ -70,8 +70,11 @@ class PhysicsEntity:
     def jump(self):
         self.movey = -self.jumpforce
 
-    def render(self, target=pgfwb.ui.display):
-        target.blit(self.surf, self.rect)
+    def render(self, target=pgfwb.ui.display, camera=None):
+        if camera:
+            target.blit(self.surf, camera.offset_rect(self.rect))
+        else:
+            target.blit(self.surf, self.rect)
 
 def player_controls(event, player):
     if event.type == pygame.KEYDOWN:
