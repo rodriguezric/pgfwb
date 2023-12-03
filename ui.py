@@ -9,8 +9,11 @@ from pgfwb.utils import (
 )
 
 
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
+screen = pygame.display.set_mode((WIDTH * DISPLAY_SCALE, HEIGHT * DISPLAY_SCALE))
 screen_rect = screen.get_rect()
+
+display = pygame.Surface((WIDTH, HEIGHT))
+display_rect = display.get_rect()
 
 font = pygame.font.Font('pgfwb/fonts/prstart.ttf', FONTSIZE)
 
@@ -27,13 +30,19 @@ def get_y_pos(idx):
 
 class screen_refresh:
     """Context manager for handling screen fill, display flip and clock tick"""
-    def __init__(self, framerate=60):
+    def __init__(self, framerate=60, fill=True):
         self.framerate = framerate
+        self.fill = fill
 
     def __enter__(self):
-        screen.fill('black')
+        if self.fill:
+            display.fill('black')
 
     def __exit__(self, *args, **kwargs):
+        screen.blit(
+            pygame.transform.scale(display, screen.get_size()),
+            (0, 0)
+        )
         pygame.display.flip()
         clock.tick(self.framerate)
 
@@ -189,9 +198,8 @@ def window(lines, autoreturn=False):
 
         window.update()
 
-        screen.blit(window.surf, window.rect)
-
-        pygame.display.flip()
+        with screen_refresh(fill=False):
+            display.blit(window.surf, window.rect)
 
         if autoreturn:
             return
@@ -215,11 +223,8 @@ def scrolling_window(lines, autoreturn=False):
 
         window.update()
 
-        screen.blit(window.surf, window.rect)
-
-        pygame.display.flip()
-
-        clock.tick(SCROLLING_FPS)
+        with screen_refresh(framerate=SCROLLING_FPS, fill=False):
+            display.blit(window.surf, window.rect)
         
         if autoreturn and window.text_lines.filled:
             return
@@ -247,9 +252,8 @@ def menu(options):
 
         menu.update()
 
-        screen.blit(menu.surf, menu.rect)
-
-        pygame.display.flip()
+        with screen_refresh(fill=False):
+            display.blit(menu.surf, menu.rect)
 
 def confirm(text=None):
     """Convenient function for displaying a window with text and a yes/no menu"""
@@ -302,6 +306,5 @@ def prompt(text=None, pos=None, width=None, height=None):
 
         prompt_window.update()
 
-        screen.blit(prompt_window.surf, prompt_window.rect)
-
-        pygame.display.flip()
+        with screen_refresh(fill=False):
+            screen.blit(prompt_window.surf, prompt_window.rect)

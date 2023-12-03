@@ -28,7 +28,7 @@ class Tile:
     def blit_args(self):
         return (self.surf, self.rect)
 
-    def render(self, target=pgfwb.ui.screen):
+    def render(self, target=pgfwb.ui.display):
         target.blit(*self.blit_args)
 
     def recalc_rect(self):
@@ -85,7 +85,7 @@ class TileMap:
         """
         return tuple(map(int, key.split(",")))
 
-    def render(self, target=pgfwb.ui.screen):
+    def render(self, target=pgfwb.ui.display):
         for tile in self.tiles.values():
             tile.render(target)
 
