@@ -1,1 +1,6 @@
-from . import utils, ui, tile
+from . import (
+    utils, 
+    ui,
+    tile,
+    platformer,
+)
