@@ -24,7 +24,7 @@ def quit_handler(event):
     if event.type == pygame.QUIT:
         quit_game()
 
-def preserve_keys(keys):
+def preserve_keys(*keys):
     """Posts events for KEYUP or KEYDOWN based on key state.
 
     This is used when we are running a game loop that calls
@@ -47,9 +47,9 @@ def preserve_keys(keys):
 
     for key in keys:
         if pressed_keys[key]:
-            post(Event(pygame.KEYUP, {'key': key}))
-        else:
             post(Event(pygame.KEYDOWN, {'key': key}))
+        else:
+            post(Event(pygame.KEYUP, {'key': key}))
 
 def keydown(event):
     """Used for creating functions for capturing KEYDOWN events with a key"""

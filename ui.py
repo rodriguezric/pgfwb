@@ -172,7 +172,7 @@ class Menu(Window):
     """A window with a cursor"""
     def __init__(self, options):
         super().__init__(options, size_by_lines=True)
-        self.rect.center = screen_rect.center
+        self.rect.center = display_rect.center
         self.cursor = Cursor(self)
 
     def update(self):
@@ -273,7 +273,7 @@ def prompt(text=None, pos=None, width=None, height=None):
         height = FONTSIZE * 3
 
     prompt_window = Window([''], width=width, height=height)
-    prompt_window.rect.center = screen_rect.center
+    prompt_window.rect.center = display_rect.center
     input_text = []
     ordmap = list(map(ord, string.ascii_lowercase + string.digits + '.'))
 
