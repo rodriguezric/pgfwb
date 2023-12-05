@@ -7,8 +7,8 @@ from settings import *
 
 @dataclass
 class Moving:
-    left: int = 0
-    right: int = 0
+    left: bool = False
+    right: bool = False
 
 class PhysicsEntity:
     def __init__(
@@ -34,15 +34,16 @@ class PhysicsEntity:
         self.movey = 0
 
     def update(self, rects):
-        self.update_horizontal(rects)
         self.update_vertical(rects)
+        self.update_horizontal(rects)
 
     def update_horizontal(self, rects):
         movex = self.moving.right - self.moving.left
         self.pos.x += movex * self.movespeed
         self.rect.x = int(self.pos.x)
         
-        if movex and (idx := self.rect.collidelist(rects)) != -1:
+        print(rects)
+        if (idx := self.rect.collidelist(rects)) != -1:
             other_rect = rects[idx]
             if movex > 0:
                 self.rect.right = other_rect.left
@@ -66,6 +67,7 @@ class PhysicsEntity:
                 self.rect.top = other_rect.bottom
                 self.movey = 0
             self.pos.y = self.rect.y
+        print(f"Rect after vertical: {self.rect}")
 
     def jump(self):
         self.movey = -self.jumpforce
@@ -79,15 +81,15 @@ class PhysicsEntity:
 def player_controls(event, player):
     if event.type == pygame.KEYDOWN:
         if event.key == pygame.K_LEFT:
-            player.moving.left = 1
+            player.moving.left = True
         if event.key == pygame.K_RIGHT:
-            player.moving.right = 1
+            player.moving.right = True
         if event.key == pygame.K_SPACE:
             if player.air_frames <= 6:
                 player.jump()
     if event.type == pygame.KEYUP:
         if event.key == pygame.K_LEFT:
-            player.moving.left = 0
+            player.moving.left = False
         if event.key == pygame.K_RIGHT:
-            player.moving.right = 0
+            player.moving.right = False
 

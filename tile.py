@@ -14,17 +14,25 @@ import settings
 import json
 import itertools
 
-adjacent_coords = itertools.product([-1, 0, 1], [-1, 0, 1])
+def pos_to_coord(pos):
+    return tuple(map(lambda x: int(x // settings.TILESIZE), pos))
+
+def coord_to_pos(coord):
+    return tuple(map(lambda x: int(x * settings.TILESIZE), coord))
+
+adjacent_coords = tuple(itertools.product([-1, 0, 1], [-1, 0, 1]))
+adjacent_poses = tuple(map(coord_to_pos, adjacent_coords))
 
 class Tile:
     """
     Models a Tile object. Children implement the graphics.
     """
-    def __init__(self, pos=(0, 0), detect_collision=True):
+    def __init__(self, coord=(0, 0), detect_collision=True):
         self.surf = pygame.Surface((settings.TILESIZE, settings.TILESIZE))
         self.rect = self.surf.get_rect()
-        self.rect.x, self.rect.y = list(map(int, pos))
-        self.pos = pos
+        self.coord = coord
+        self.pos = coord_to_pos(coord)
+        self.rect.x, self.rect.y = list(map(int, self.pos))
         self.detect_collision = detect_collision
 
     @property
@@ -66,11 +74,6 @@ tile_classes = (
 
 tile_class_map = {cls.__name__: cls for cls in tile_classes}
 
-def pos_to_coord(pos):
-    return tuple(map(lambda x: x // settings.TILESIZE, pos))
-
-def coord_to_pos(coord):
-    return tuple(map(lambda x: x * settings.TILESIZE, coord))
 
 class TileMap:
     """
@@ -85,7 +88,7 @@ class TileMap:
         if file:
             self.load(file)
 
-    def key_to_pos(self, key):
+    def key_to_coord(self, key):
         """
         TileMap JSON keys are comma delimited pos strings
         """
@@ -95,34 +98,34 @@ class TileMap:
         for tile in self.tiles.values():
             tile.render(target, camera=camera)
 
-    def set_tile_at_pos(self, pos, tile_partial):
+    def set_tile_at_coord(self, coord, tile_partial):
         """
         tile_partial expects all the args for the tile class to 
-        be filled except the position.
+        be filled except the coordition.
 
         e.g.
         green_tile = functools.partial(ColorTile, color=Green)
         """
-        self.tiles[pos] = tile_partial(pos=pos)
+        self.tiles[coord] = tile_partial(coord=coord)
 
-    def remove_tile_at_pos(self, pos):
-        if pos in self.tiles:
-            del self.tiles[pos]
+    def remove_tile_at_coord(self, coord):
+        if coord in self.tiles:
+            del self.tiles[coord]
 
     def load(self, file):
         with open(file) as fp:
             for key, kwargs in json.load(fp).items():
-                pos = self.key_to_pos(key)
+                coord = self.key_to_coord(key)
                 tile_class = tile_class_map[kwargs.pop('tile_class')]
-                self.tiles[pos] = tile_class(pos=pos, **kwargs)
+                self.tiles[coord] = tile_class(coord=coord, **kwargs)
 
     def save(self, file):
         data = {}
-        for pos, tile in self.tiles.items():
-            key = ",".join(map(str, pos))
+        for coord, tile in self.tiles.items():
+            key = ",".join(map(str, coord))
             tile_class = tile.__class__.__name__
 
-            exclude_fields = ('surf', 'rect', 'pos')
+            exclude_fields = ('surf', 'rect', 'coord', 'pos')
             kwargs = {k: v for k, v in tile.__dict__.items()
                       if k not in exclude_fields}
             
@@ -133,11 +136,22 @@ class TileMap:
         with open(file, 'w') as fp:
             json.dump(data, fp)
 
+    def rects_around(self, pos):
+        coord = pos_to_coord(pos)
+        coords = [(coord[0] + adjacent_coord[0], coord[1] + adjacent_coord[1])
+                 for adjacent_coord in adjacent_coords]
+
+        return [tile.rect 
+                for coord in coords 
+                if (tile := self.tiles.get(coord))]
+
 class Camera:
-    def __init__(self, target, followx=True, followy=True):
+    def __init__(self, target, followx=True, followy=True, follow_rate=30):
         self.target = target
         self.followx = followx
         self.followy = followy
+        self.follow_rate = max(min(follow_rate, 30), 1)
+
         self.pos = pygame.Vector2(
             x=target.rect.centerx - pgfwb.ui.display.get_width() / 2,
             y=target.rect.centery - pgfwb.ui.display.get_height() / 2
@@ -146,10 +160,10 @@ class Camera:
 
     def update(self):
         if self.followx:
-            self.pos.x += (self.target.rect.centerx - pgfwb.ui.display.get_width() / 2 - self.pos.x) / 30
+            self.pos.x += (self.target.rect.centerx - pgfwb.ui.display.get_width() / 2 - self.pos.x) / self.follow_rate
 
         if self.followy:
-            self.pos.y += (self.target.rect.centery - pgfwb.ui.display.get_height() / 2 - self.pos.y) / 30
+            self.pos.y += (self.target.rect.centery - pgfwb.ui.display.get_height() / 2 - self.pos.y) / self.follow_rate
 
         self.render_scroll.x = int(self.pos.x)
         self.render_scroll.y = int(self.pos.y)
@@ -163,6 +177,4 @@ class Camera:
         rect_copy.y -= self.render_scroll.y
 
         return rect_copy
-
-
 
