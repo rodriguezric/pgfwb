@@ -42,7 +42,6 @@ class PhysicsEntity:
         self.pos.x += movex * self.movespeed
         self.rect.x = int(self.pos.x)
         
-        print(rects)
         if (idx := self.rect.collidelist(rects)) != -1:
             other_rect = rects[idx]
             if movex > 0:
@@ -67,7 +66,6 @@ class PhysicsEntity:
                 self.rect.top = other_rect.bottom
                 self.movey = 0
             self.pos.y = self.rect.y
-        print(f"Rect after vertical: {self.rect}")
 
     def jump(self):
         self.movey = -self.jumpforce
