@@ -283,7 +283,7 @@ def prompt(text=None, pos=None, width=None, height=None):
             pressed = keydown(event)
 
             if pressed(pygame.K_RETURN):
-                screen.fill('black')
+                display.fill('black')
                 return ''.join(input_text)
 
             if pressed(pygame.K_BACKSPACE):
@@ -307,4 +307,4 @@ def prompt(text=None, pos=None, width=None, height=None):
         prompt_window.update()
 
         with screen_refresh(fill=False):
-            screen.blit(prompt_window.surf, prompt_window.rect)
+            display.blit(prompt_window.surf, prompt_window.rect)
