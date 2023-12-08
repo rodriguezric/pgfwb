@@ -98,7 +98,7 @@ class TileMap:
         for tile in self.tiles.values():
             tile.render(target, camera=camera)
 
-    def set_tile_at_coord(self, coord, tile_partial):
+    def add(self, coord, tile_partial):
         """
         tile_partial expects all the args for the tile class to 
         be filled except the coordition.
@@ -108,11 +108,12 @@ class TileMap:
         """
         self.tiles[coord] = tile_partial(coord=coord)
 
-    def remove_tile_at_coord(self, coord):
+    def remove(self, coord):
         if coord in self.tiles:
             del self.tiles[coord]
 
     def load(self, file):
+        self.tiles = {}
         with open(file) as fp:
             for key, kwargs in json.load(fp).items():
                 coord = self.key_to_coord(key)
