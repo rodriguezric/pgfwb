@@ -137,14 +137,14 @@ class TileMap:
         with open(file, 'w') as fp:
             json.dump(data, fp)
 
-    def rects_around(self, pos):
+    def rects_around(self, pos, key=lambda x: True):
         coord = pos_to_coord(pos)
         coords = [(coord[0] + adjacent_coord[0], coord[1] + adjacent_coord[1])
                  for adjacent_coord in adjacent_coords]
 
         return [tile.rect 
                 for coord in coords 
-                if (tile := self.tiles.get(coord))]
+                if (tile := self.tiles.get(coord)) and key(tile)]
 
 class Camera:
     def __init__(self, target, followx=True, followy=True, follow_rate=30):
