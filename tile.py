@@ -74,7 +74,6 @@ tile_classes = (
 
 tile_class_map = {cls.__name__: cls for cls in tile_classes}
 
-
 class TileMap:
     """
     Object for holding tiles. Build from a JSON file.
@@ -82,11 +81,11 @@ class TileMap:
     Data is:
         pos_str: {kwargs + tile_class}
     """
-    def __init__(self, file=None):
+    def __init__(self, file=None, class_maps=None):
         self.tiles = {}
 
         if file:
-            self.load(file)
+            self.load(file, class_maps)
 
     def key_to_coord(self, key):
         """
@@ -112,12 +111,17 @@ class TileMap:
         if coord in self.tiles:
             del self.tiles[coord]
 
-    def load(self, file):
+    def load(self, file, class_maps=None):
+        class_map = {**tile_class_map}
+        if class_maps:
+            for _class_map in class_maps:
+                class_map = {**class_map, **_class_map}
+            
         self.tiles = {}
         with open(file) as fp:
             for key, kwargs in json.load(fp).items():
                 coord = self.key_to_coord(key)
-                tile_class = tile_class_map[kwargs.pop('tile_class')]
+                tile_class = class_map[kwargs.pop('tile_class')]
                 self.tiles[coord] = tile_class(coord=coord, **kwargs)
 
     def save(self, file):
@@ -126,9 +130,14 @@ class TileMap:
             key = ",".join(map(str, coord))
             tile_class = tile.__class__.__name__
 
-            exclude_fields = ('surf', 'rect', 'coord', 'pos')
+            keep_fields = (
+                'detect_collision',
+                'behavior_name',
+                'movespeed',
+                'color',
+            )
             kwargs = {k: v for k, v in tile.__dict__.items()
-                      if k not in exclude_fields}
+                      if k in keep_fields}
             
             kwargs['tile_class'] = tile_class
 
