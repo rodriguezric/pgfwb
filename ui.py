@@ -30,13 +30,13 @@ def get_y_pos(idx):
 
 class screen_refresh:
     """Context manager for handling screen fill, display flip and clock tick"""
-    def __init__(self, framerate=60, fill=True):
+    def __init__(self, framerate=60, fill='black'):
         self.framerate = framerate
         self.fill = fill
 
     def __enter__(self):
         if self.fill:
-            display.fill('black')
+            display.fill(self.fill)
 
     def __exit__(self, *args, **kwargs):
         screen.blit(
@@ -186,6 +186,9 @@ def window(lines, autoreturn=False):
     else while the window is visible without having to press return
     to exit its game loop
     """
+    if isinstance(lines, str):
+        lines = [lines]
+        
     window = Window(lines)
 
     while True:

@@ -121,6 +121,7 @@ class Player(PhysicsEntity):
             if event.key == pygame.K_RIGHT:
                 self.moving.right = False
 
+
 # Rates are applied for behaviors. 
 SLOW_RATE = 120
 NORMAL_RATE = 60
@@ -147,13 +148,6 @@ class Enemy(FrameEntity):
     def update(self, rects):
         super().update(rects)
         self.behavior(self)
-
-entity_classes = [
-    Player,
-    Enemy
-]
-
-entity_class_map = {cls.__name__: cls for cls in entity_classes}
 
 def standing_behavior(frame_entity):
     ...
@@ -188,3 +182,40 @@ behavior_functions = [
 ]
 
 behavior_function_map = {fn.__name__: fn for fn in behavior_functions}
+
+class Door:
+    def __init__(
+        self, 
+        pos=None, 
+        coord=None,
+        width=TILESIZE,
+        height=TILESIZE,
+        color=None,
+    ):
+        if coord:
+            pos = pygame.Vector2(pgfwb.tile.coord_to_pos(coord))
+
+        if pos is None:
+            pos = pygame.Vector2()
+
+        self.surf = pygame.Surface((width, height))
+
+        self.color = color
+        if color: 
+            self.surf.fill(color)
+        
+        self.rect = pygame.Rect(*pos, width, height)
+
+    def render(self, target=pgfwb.ui.display, camera=None):
+        if camera:
+            target.blit(self.surf, camera.offset_rect(self.rect))
+        else:
+            target.blit(self.surf, self.rect)
+
+entity_classes = [
+    Player,
+    Enemy,
+    Door,
+]
+
+entity_class_map = {cls.__name__: cls for cls in entity_classes}
