@@ -219,3 +219,25 @@ entity_classes = [
 ]
 
 entity_class_map = {cls.__name__: cls for cls in entity_classes}
+
+class PlatformerTileMap(pgfwb.tile.TileMap):
+    def __init__(self, file=None):
+        self.tiles = {}
+
+        if file:
+            self.load(file, [entity_class_map])
+
+    @property
+    def player(self):
+        return [x for x in self.tiles.values()
+                if isinstance(x, Player)][0]
+
+    @property
+    def enemies(self):
+        return [x for x in self.tiles.values()
+                if isinstance(x, Enemy)]
+
+    @property
+    def door(self):
+        return [x for x in self.tiles.values()
+                if isinstance(x, Door)][0]
