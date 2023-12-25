@@ -6,4 +6,5 @@ from . import (
     ui,
     tile,
     platformer,
+    animation,
 )
