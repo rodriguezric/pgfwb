@@ -63,9 +63,13 @@ class ColorTile(Tile):
         self.surf.fill(color)
 
 class GraphicTile(Tile):
-    def __init__(self, filepath):
+    def __init__(self, filepath, index=0, **kwargs):
         super().__init__(**kwargs)
-        self.surf = pygame.image.load(filepath).convert()
+        self.filepath = filepath
+        self.index = index
+        spritesheet = pygame.image.load(filepath).convert_alpha()
+        self.surf = pygame.Surface((settings.TILESIZE, settings.TILESIZE)).convert_alpha()
+        self.surf.blit(spritesheet, (-index * settings.TILESIZE, 0))
 
 tile_classes = (
     ColorTile,
@@ -134,6 +138,8 @@ class TileMap:
                 'detect_collision',
                 'behavior_name',
                 'movespeed',
+                'filepath',
+                "index",
                 'color',
             )
             kwargs = {k: v for k, v in tile.__dict__.items()
