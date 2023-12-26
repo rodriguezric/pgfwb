@@ -191,6 +191,7 @@ class Door:
         width=TILESIZE,
         height=TILESIZE,
         color=None,
+        filepath=None,
     ):
         if coord:
             pos = pygame.Vector2(pgfwb.tile.coord_to_pos(coord))
@@ -203,6 +204,10 @@ class Door:
         self.color = color
         if color: 
             self.surf.fill(color)
+
+        self.filepath = filepath
+        if filepath:
+            self.surf = pygame.image.load(filepath).convert_alpha()
         
         self.rect = pygame.Rect(*pos, width, height)
 
