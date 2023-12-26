@@ -207,7 +207,7 @@ class Door:
 
         self.filepath = filepath
         if filepath:
-            self.surf = pgfwb.image.load(filepath).convert_alpha()
+            self.surf = pygame.image.load(filepath).convert_alpha()
         
         self.rect = pygame.Rect(*pos, width, height)
 
