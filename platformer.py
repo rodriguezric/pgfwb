@@ -41,9 +41,10 @@ class PhysicsEntity:
         self.movespeed = movespeed
         self.jumpforce = jumpforce
         self.maxfallspeed = maxfallspeed
+        self.width = width
+        self.height = height
 
         self.surf = pygame.Surface((width, height))
-        
         self.color = color
         if color: 
             self.surf.fill(color)
@@ -57,6 +58,7 @@ class PhysicsEntity:
             self.surf = self.animation_manager.next()
         
         self.rect = pygame.Rect(*pos, width, height)
+
         self.air_frames = 0
         self.moving = Moving()
         self.movey = 0
@@ -78,10 +80,12 @@ class PhysicsEntity:
         elif self.animation_manager.animation_name != 'standing':
             self.animation_manager.animation = 'standing'
 
-        print(self.animation_manager.animation_name)
         self.surf = self.animation_manager.next()
 
     def update_horizontal(self, rects):
+        """
+        Move horizontally and handle horizontal collisions
+        """
         movex = self.moving.right - self.moving.left
         self.pos.x += movex * self.movespeed
         self.rect.x = int(self.pos.x)
@@ -95,6 +99,10 @@ class PhysicsEntity:
             self.pos.x = self.rect.x
 
     def update_vertical(self, rects):
+        """
+        Move vertically and handle vertical collisions
+        Manages air_frames to determine if the player should be able to jump.
+        """
         self.air_frames += 1
         self.movey = min(self.maxfallspeed, self.movey + self.gravity)
         self.pos.y += self.movey
@@ -122,20 +130,29 @@ class PhysicsEntity:
     def move_right(self):
         self.moving.right = True
         self.moving.left = False
+        self.flip = False
 
     def stand(self):
         self.moving.right = False
         self.moving.left = False
 
     def render(self, target=pgfwb.ui.display, camera=None):
+        """
+        Blit current surf to the target. This function creates a rectangle based 
+        on the size of the surf. The rect of the entity represents the hitbox, 
+        but we don't want to offset how the image is blitting based on this.
+        """
         _surf = self.surf.copy()
         if self.flip:
             _surf = pygame.transform.flip(_surf, True, False)
 
+        surf_rect = self.surf.get_rect(bottom=self.rect.bottom)
+        surf_rect.centerx = self.rect.centerx
+
         if camera:
-            target.blit(_surf, camera.offset_rect(self.rect))
+            target.blit(_surf, camera.offset_rect(surf_rect))
         else:
-            target.blit(_surf, self.rect)
+            target.blit(_surf, surf_rect)
 
 class Player(PhysicsEntity):
     def event_controls(self, event):
