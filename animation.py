@@ -32,11 +32,12 @@ def spritesheet_animation_gen(file, cells, frames, tile_size, loop=True):
         _loop = loop
 
 class AnimationManager:
-    def __init__(self, folder, frames=16):
+    def __init__(self, folder, frames=8):
         self.folder = f"animations/{folder}"
         self.animations = {}
         self.frames = frames
         self._animation = None
+        self.animation_name = None
 
         for filename in os.listdir(self.folder):
             spritesheet_file = f"{self.folder}/{filename}"
@@ -50,8 +51,7 @@ class AnimationManager:
             animation_name = filename.split("-")[-1] \
                                      .split(".")[0]
 
-            print(f"Animation name: {animation_name}")
-            print(f"Cells: {cells}")
+            self.animation_name = animation_name
 
             self.animations[animation_name] = functools.partial(
                 spritesheet_animation_gen,
@@ -63,6 +63,7 @@ class AnimationManager:
 
             if not self._animation:
                 self.animation = animation_name
+            
 
     def next(self):
         return next(self.animation)
@@ -73,5 +74,6 @@ class AnimationManager:
 
     @animation.setter
     def animation(self, animation_name):
+        self.animation_name = animation_name
         self._animation = self.animations[animation_name]()
 

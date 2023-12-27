@@ -1,5 +1,4 @@
 import pygame
-
 import json
 
 from dataclasses import dataclass
@@ -14,6 +13,9 @@ class Moving:
     left: bool = False
     right: bool = False
 
+    def __bool__(self):
+        return self.left or self.right
+
 class PhysicsEntity:
     def __init__(
         self, 
@@ -26,6 +28,7 @@ class PhysicsEntity:
         jumpforce=10,
         maxfallspeed=8,
         color=None,
+        folder=None,
     ):
         if coord:
             pos = pygame.Vector2(pgfwb.tile.coord_to_pos(coord))
@@ -44,15 +47,39 @@ class PhysicsEntity:
         self.color = color
         if color: 
             self.surf.fill(color)
+
+        self.folder = folder
+        if folder:
+            self.animation_manager = pgfwb.animation.AnimationManager(
+                folder=folder
+            )
+
+            self.surf = self.animation_manager.next()
         
         self.rect = pygame.Rect(*pos, width, height)
         self.air_frames = 0
         self.moving = Moving()
         self.movey = 0
+        self.flip = False
 
     def update(self, rects):
         self.update_vertical(rects)
         self.update_horizontal(rects)
+
+        if self.animation_manager:
+            self.update_animation()
+
+    def update_animation(self):
+        if self.air_frames > 0:
+            self.animation_manager.animation = 'jumping'
+        elif self.moving:
+            if self.animation_manager.animation_name != 'walking':
+                self.animation_manager.animation = 'walking'
+        elif self.animation_manager.animation_name != 'standing':
+            self.animation_manager.animation = 'standing'
+
+        print(self.animation_manager.animation_name)
+        self.surf = self.animation_manager.next()
 
     def update_horizontal(self, rects):
         movex = self.moving.right - self.moving.left
@@ -90,6 +117,7 @@ class PhysicsEntity:
     def move_left(self):
         self.moving.left = True
         self.moving.right = False
+        self.flip = True
 
     def move_right(self):
         self.moving.right = True
@@ -100,18 +128,24 @@ class PhysicsEntity:
         self.moving.left = False
 
     def render(self, target=pgfwb.ui.display, camera=None):
+        _surf = self.surf.copy()
+        if self.flip:
+            _surf = pygame.transform.flip(_surf, True, False)
+
         if camera:
-            target.blit(self.surf, camera.offset_rect(self.rect))
+            target.blit(_surf, camera.offset_rect(self.rect))
         else:
-            target.blit(self.surf, self.rect)
+            target.blit(_surf, self.rect)
 
 class Player(PhysicsEntity):
     def event_controls(self, event):
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_LEFT:
                 self.moving.left = True
+                self.flip = True
             if event.key == pygame.K_RIGHT:
                 self.moving.right = True
+                self.flip = False
             if event.key == pygame.K_SPACE:
                 if self.air_frames <= 6:
                     self.jump()
