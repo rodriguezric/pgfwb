@@ -138,8 +138,11 @@ class TileMap:
                 'detect_collision',
                 'behavior_name',
                 'movespeed',
+                'jumpforce',
+                'gravity',
                 'filepath',
-                "index",
+                'folder',
+                'index',
                 'color',
             )
             kwargs = {k: v for k, v in tile.__dict__.items()
