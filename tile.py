@@ -139,6 +139,8 @@ class TileMap:
                 'behavior_name',
                 'movespeed',
                 'jumpforce',
+                'width',
+                'height',
                 'gravity',
                 'filepath',
                 'folder',
