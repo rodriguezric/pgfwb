@@ -69,6 +69,7 @@ class GraphicTile(Tile):
         self.index = index
         spritesheet = pygame.image.load(filepath).convert_alpha()
         self.surf = pygame.Surface((settings.TILESIZE, settings.TILESIZE)).convert_alpha()
+        self.surf.fill(pygame.Color(0, 0, 0, 0))
         self.surf.blit(spritesheet, (-index * settings.TILESIZE, 0))
 
 tile_classes = (

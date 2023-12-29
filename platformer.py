@@ -44,7 +44,9 @@ class PhysicsEntity:
         self.width = width
         self.height = height
 
+
         self.surf = pygame.Surface((width, height))
+
         self.color = color
         if color: 
             self.surf.fill(color)
@@ -57,7 +59,12 @@ class PhysicsEntity:
 
             self.surf = self.animation_manager.next()
         
+        self.surf_rect = self.surf.get_rect()
+        self.surf_rect.x, self.surf_rect.y = pos
+
         self.rect = pygame.Rect(*pos, width, height)
+        self.rect.centerx = self.surf_rect.centerx
+        self.rect.bottom = self.surf_rect.bottom
 
         self.air_frames = 0
         self.moving = Moving()
@@ -146,13 +153,13 @@ class PhysicsEntity:
         if self.flip:
             _surf = pygame.transform.flip(_surf, True, False)
 
-        surf_rect = self.surf.get_rect(bottom=self.rect.bottom)
-        surf_rect.centerx = self.rect.centerx
+        self.surf_rect = self.surf.get_rect(bottom=self.rect.bottom)
+        self.surf_rect.centerx = self.rect.centerx
 
         if camera:
-            target.blit(_surf, camera.offset_rect(surf_rect))
+            target.blit(_surf, camera.offset_rect(self.surf_rect))
         else:
-            target.blit(_surf, surf_rect)
+            target.blit(_surf, self.surf_rect)
 
 class Player(PhysicsEntity):
     def event_controls(self, event):
