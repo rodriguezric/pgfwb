@@ -58,7 +58,7 @@ class PhysicsEntity:
             )
 
             self.surf = self.animation_manager.next()
-        
+
         self.surf_rect = self.surf.get_rect()
         self.surf_rect.x, self.surf_rect.y = pos
 
@@ -70,24 +70,27 @@ class PhysicsEntity:
         self.moving = Moving()
         self.movey = 0
         self.flip = False
+        self.active = True
 
     def update(self, rects):
-        self.update_vertical(rects)
-        self.update_horizontal(rects)
+        if self.active:
+            self.update_vertical(rects)
+            self.update_horizontal(rects)
 
-        if self.animation_manager:
-            self.update_animation()
+            if self.animation_manager:
+                self.update_animation()
 
     def update_animation(self):
-        if self.air_frames > 0:
-            self.animation_manager.animation = 'jumping'
-        elif self.moving:
-            if self.animation_manager.animation_name != 'walking':
-                self.animation_manager.animation = 'walking'
-        elif self.animation_manager.animation_name != 'standing':
-            self.animation_manager.animation = 'standing'
+        if self.active:
+            if self.air_frames > 0:
+                self.animation_manager.animation = 'jumping'
+            elif self.moving:
+                if self.animation_manager.animation_name != 'walking':
+                    self.animation_manager.animation = 'walking'
+            elif self.animation_manager.animation_name != 'standing':
+                self.animation_manager.animation = 'standing'
 
-        self.surf = self.animation_manager.next()
+            self.surf = self.animation_manager.next()
 
     def update_horizontal(self, rects):
         """
@@ -149,63 +152,111 @@ class PhysicsEntity:
         on the size of the surf. The rect of the entity represents the hitbox, 
         but we don't want to offset how the image is blitting based on this.
         """
-        _surf = self.surf.copy()
-        if self.flip:
-            _surf = pygame.transform.flip(_surf, True, False)
+        if self.active:
+            _surf = self.surf.copy()
+            if self.flip:
+                _surf = pygame.transform.flip(_surf, True, False)
 
-        self.surf_rect = self.surf.get_rect(bottom=self.rect.bottom)
-        self.surf_rect.centerx = self.rect.centerx
+            self.surf_rect = self.surf.get_rect(bottom=self.rect.bottom)
+            self.surf_rect.centerx = self.rect.centerx
 
-        if camera:
-            target.blit(_surf, camera.offset_rect(self.surf_rect))
-        else:
-            target.blit(_surf, self.surf_rect)
+            if camera:
+                target.blit(_surf, camera.offset_rect(self.surf_rect))
+            else:
+                target.blit(_surf, self.surf_rect)
 
 class Player(PhysicsEntity):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self. bullets = [
+            pgfwb.platformer.Bullet(
+                folder='bullet', 
+                width=6, 
+                height=6,
+                movespeed=4,
+            ) 
+            for _ in range(3)
+        ]
+
     def event_controls(self, event):
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_LEFT:
-                self.moving.left = True
-                self.flip = True
+                self.move_left()
             if event.key == pygame.K_RIGHT:
-                self.moving.right = True
-                self.flip = False
+                self.move_right()
             if event.key == pygame.K_SPACE:
                 if self.air_frames <= 6:
                     self.jump()
+            if event.key == pygame.K_LSHIFT:
+                bullet = next((x for x in self.bullets if not x.active), None)
+                if bullet:
+                    bullet.flip = self.flip
+                    bullet.active = True
+                    bullet.pos = self.pos.copy()
+                    bullet.frames = 0
+
         if event.type == pygame.KEYUP:
             if event.key == pygame.K_LEFT:
                 self.moving.left = False
             if event.key == pygame.K_RIGHT:
                 self.moving.right = False
 
+    def render(self, target=pgfwb.ui.display, camera=None):
+        super().render(target, camera)
+
+        for bullet in self.bullets:
+            bullet.render(target, camera)
+
+
+class Bullet(PhysicsEntity):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.gravity = 0
+        self.active = False
+        self.frames = 0
+
+    def update(self, rects, enemy_rects):
+        if self.active:
+            self.update_horizontal(rects, enemy_rects)
+            super().update_vertical(rects)
+
+            if self.flip:
+                self.move_left()
+            else:
+                self.move_right()
+
+            self.frames += 1
+            if self.frames > 60:
+                self.active = False
+
+    def update_horizontal(self, rects, enemies):
+        """
+        Move horizontally and handle horizontal collisions
+        """
+        movex = self.moving.right - self.moving.left
+        self.pos.x += movex * self.movespeed
+        self.rect.x = int(self.pos.x)
+        
+        if (idx := self.rect.collidelist(rects)) != -1:
+            self.active = False
+
+        enemy_rects = [x.rect for x in enemies]
+        if (idx := self.rect.collidelist(enemy_rects)) != -1:
+            self.active = False
+            enemy = enemies[idx]
+            enemy.active = False
+
+    def update_animation(self):
+        ...
+
+    def render(self, target=pgfwb.ui.display, camera=None):
+        if self.active:
+            super().render(target, camera)
 
 # Rates are applied for behaviors. 
 SLOW_RATE = 120
 NORMAL_RATE = 60
 FAST_RATE = 30
-
-class FrameEntity(PhysicsEntity):
-    """
-    A physics entity that tracks its frames. Used for behavior
-    """
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.frame = 0
-
-    def update(self, rects):
-        super().update(rects)
-        self.frame += 1
-    
-class Enemy(FrameEntity):
-    def __init__(self, behavior_name, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.behavior_name = behavior_name
-        self.behavior = behavior_function_map[behavior_name]
-
-    def update(self, rects):
-        super().update(rects)
-        self.behavior(self)
 
 def standing_behavior(frame_entity):
     ...
@@ -240,6 +291,43 @@ behavior_functions = [
 ]
 
 behavior_function_map = {fn.__name__: fn for fn in behavior_functions}
+
+class FrameEntity(PhysicsEntity):
+    """
+    A physics entity that tracks its frames. Used for behavior
+    """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.frame = 0
+
+    def update(self, rects):
+        super().update(rects)
+        self.frame += 1
+    
+class Enemy(FrameEntity):
+    def __init__(self, behavior_name, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.behavior_name = behavior_name
+        self.behavior = behavior_function_map[behavior_name]
+
+    def update(self, rects):
+        super().update(rects)
+        self.behavior(self)
+
+class Lava(Enemy):
+    def __init__(self, behavior_name='standing_behavior', *args, **kwargs):
+        kwargs.pop('folder', None)
+        kwargs.pop('gravity', None)
+        super().__init__(
+            behavior_name, 
+            folder='lava',
+            gravity=0,
+            *args,
+            **kwargs
+        )
+
+    def update_animation(self):
+        ...
 
 class Door:
     def __init__(
@@ -279,6 +367,7 @@ entity_classes = [
     Player,
     Enemy,
     Door,
+    Lava,
 ]
 
 entity_class_map = {cls.__name__: cls for cls in entity_classes}
