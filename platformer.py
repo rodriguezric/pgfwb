@@ -329,7 +329,7 @@ class Lava(Enemy):
     def update_animation(self):
         ...
 
-class Door:
+class StaticEntity:
     def __init__(
         self, 
         pos=None, 
@@ -363,11 +363,25 @@ class Door:
         else:
             target.blit(self.surf, self.rect)
 
+class Door(StaticEntity):
+    ...
+
+class Portal(StaticEntity):
+    def __init__(self, destination_str="0,0", *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.destination_str = destination_str
+
+    @functools.cached_property
+    def destination_pos(self):
+        return pygame.Vector2(*map(int, self.destination_str.split(",")))
+
+
 entity_classes = [
     Player,
     Enemy,
     Door,
     Lava,
+    Portal,
 ]
 
 entity_class_map = {cls.__name__: cls for cls in entity_classes}
@@ -393,3 +407,8 @@ class PlatformerTileMap(pgfwb.tile.TileMap):
     def door(self):
         return [x for x in self.tiles.values()
                 if isinstance(x, Door)][0]
+
+    @property
+    def portals(self):
+        return [x for x in self.tiles.values()
+                if isinstance(x, Portal)]
