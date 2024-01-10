@@ -137,6 +137,7 @@ class TileMap:
 
             keep_fields = (
                 'detect_collision',
+                'destination_str',
                 'behavior_name',
                 'movespeed',
                 'jumpforce',

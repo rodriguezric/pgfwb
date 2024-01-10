@@ -278,7 +278,7 @@ def prompt(text=None, pos=None, width=None, height=None):
     prompt_window = Window([''], width=width, height=height)
     prompt_window.rect.center = display_rect.center
     input_text = []
-    ordmap = list(map(ord, string.ascii_lowercase + string.digits + '.'))
+    ordmap = list(map(ord, string.ascii_lowercase + string.digits + '.,-'))
 
     while True:
         for event in pygame.event.get():
